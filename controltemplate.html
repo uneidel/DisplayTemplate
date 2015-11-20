@@ -1,0 +1,243 @@
+<!-- 
+Copyright (c) 2015 uneidel at microsoft
+
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
+
+<html xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882"> 
+<head>
+<title>DragDrop Sorting Control Template</title>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:TemplateHidden msdt:dt="string">0</mso:TemplateHidden>
+<mso:MasterPageDescription msdt:dt="string">This is a sample </mso:MasterPageDescription>
+<mso:ContentTypeId msdt:dt="string">0x0101002039C03B61C64EC4A04F5361F385106601</mso:ContentTypeId>
+<mso:TargetControlType msdt:dt="string">;#Content Web Parts;#</mso:TargetControlType>
+<mso:HtmlDesignAssociated msdt:dt="string">1</mso:HtmlDesignAssociated>
+<mso:HtmlDesignConversionSucceeded msdt:dt="string">True</mso:HtmlDesignConversionSucceeded>
+<mso:HtmlDesignStatusAndPreview msdt:dt="string"></mso:HtmlDesignStatusAndPreview>
+<mso:CrawlerXSLFile msdt:dt="string"></mso:CrawlerXSLFile>
+<mso:HtmlDesignPreviewUrl msdt:dt="string"></mso:HtmlDesignPreviewUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+    <script>
+        $includeLanguageScript(this.url, "~sitecollection/_catalogs/masterpage/Display Templates/Language Files/{Locale}/CustomStrings.js");
+		$includeCSS(this.url, "~sitecollection/_catalogs/masterpage/Display Templates/Content%20Web%20Parts/Custom/DragDropControl.css")
+		
+    </script>
+    <div id="Control_List">
+
+
+<!--#_ 
+	 RegisterSod('jquery.min.js', Srch.U.replaceUrlTokens("https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"));
+     RegisterSod('jquery-ui.min.js', Srch.U.replaceUrlTokens("https://code.jquery.com/ui/1.11.3/jquery-ui.min.js"));
+	
+	  if (!$isNull(ctx.ClientControl) &&
+        !$isNull(ctx.ClientControl.shouldRenderControl) &&
+        !ctx.ClientControl.shouldRenderControl())
+        {   
+            return "";
+        }
+
+    ctx.ListDataJSONGroupsKey = "ResultTables";
+    ctx["CurrentItems"] = ctx.ListData.ResultTables[0].ResultRows;
+    var siteURL = SP.PageContextInfo.get_siteAbsoluteUrl();
+	
+	AddPostRenderCallback(ctx, function () {
+	SP.SOD.loadMultiple(['sp.js'], function () {
+        EnsureScriptFunc("jquery.min.js", null, function() {
+            EnsureScriptFunc("jquery-ui.min.js", null, function() {
+                
+				
+				$( ".cbs-List div" ).draggable({
+							appendTo: "body",
+							helper: "clone",
+							cursorAt: { cursor: "move", top: 5, left: 0 }
+				});
+				$(".cbs-List div").on("drag",function( event, ui ) 
+				{
+					$("#DropZone").css("display","block");
+				});
+				
+
+				$("#DropZone").droppable({
+					  activeClass: "ui-state-default",
+					  hoverClass: "ui-state-hover",
+					  drop: function( event, ui ) {
+						$(this).find(".placeholder").remove();
+						var titlecontent = ui.draggable.find(".cbs-picture3LinesLine1").text();
+						
+						if (titlecontent.length > 0)
+						{
+							$("<li></li>").text(titlecontent).appendTo( $(".news-content").find("ol") );
+							
+						}
+					  }
+				}).sortable({
+					  items: "li:not(.placeholder)",
+					  sort: function() {
+						$( this ).removeClass( "ui-state-default" );
+						$("ul, li").disableSelection();
+					  }
+				});
+				$("#trash").droppable({
+					  accept: ".news-content li",
+					  hoverClass: 'hovered',
+					  drop: function( event, ui ) {
+							entfernen( ui.draggable );
+						  }
+				});
+				function entfernen($item) {
+						$item.remove();
+				}
+				
+				function GetAllWebparts() {
+					var d = $.Deferred();
+					var clientContext = SP.ClientContext.get_current();
+					var currentFile = clientContext.get_web().getFileByServerRelativeUrl(_spPageContextInfo.serverRequestPath);
+					var limitedWebPartManager = currentFile.getLimitedWebPartManager(SP.WebParts.PersonalizationScope.shared);
+					var webparts = limitedWebPartManager.get_webParts();
+					clientContext.load(webparts, 'Include(WebPart.Properties)');
+					clientContext.executeQueryAsync(function(){ d.resolve(webparts)}, 
+													function(){d.reject("Strange things can happen")});
+					return d.promise();
+				}
+				
+				function GetRankRulesFromList(){
+					var count = 1;
+					var rules = [];
+					$(".news-content li" ).each(function( index ) {
+						var rankrule = new Object();  
+						rankrule.boost = 10-count;
+						rankrule.matchType = 2;  // Contains Equals and so on
+						rankrule.matchValue = $(this).text().split(" ")[0]; // For some strange Reason you'll just have to pick first word? not sure why
+						count++;
+						rules.push(rankrule);
+					});
+					return rules;	
+				}
+				function GetWebPartProperties(webpart)
+				{
+					var d = $.Deferred();
+					var clientContext = SP.ClientContext.get_current();
+					// Getting webpart properties
+					var webPartProperties = webpart.get_webPart().get_properties();
+					clientContext.load(webpart.get_webPart())
+					clientContext.load(webPartProperties);
+					clientContext.executeQueryAsync(function(){ d.resolve(webpart,webPartProperties)}, function(){d.reject("Strange things can happen - GetProperties ")});
+					return d.promise();
+				}
+				function UpdateQueryOnWebPart(webpartDefinition,webpart, webpartProperties, query)
+				{
+					var d = $.Deferred();
+					var clientContext = SP.ClientContext.get_current();
+					var webPartPropertyDataProviderJSON = webpartProperties.get_item("DataProviderJSON");
+					
+					 if (webPartPropertyDataProviderJSON.length != 0) 
+					 {
+						var jsonObjectProperty = JSON.parse(webPartPropertyDataProviderJSON);
+						jsonObjectProperty.RankRulesJson = JSON.stringify(GetRankRulesFromList());
+						var updatedDataProviderJSON = JSON.stringify(jsonObjectProperty);
+						webpartProperties.set_item("DataProviderJSON", updatedDataProviderJSON);
+						webpartDefinition.saveWebPartChanges();
+						//webpart.saveWebPartChanges();
+						clientContext.load(webpartDefinition);
+						//client.Context.load(webpart);
+						clientContext.executeQueryAsync(function()	{ d.resolve("Done")}, function(err){d.reject("Strange things can happen - save Changes")});
+					}
+					return d.promise();
+				}
+				$("#btnUpdate").click(function(){
+					GetAllWebparts().then(function(webparts)
+					{
+						if (webparts.get_count() < 1 ) { alert('No Web Parts on this page.');	return; }
+						
+						
+						//find the web part on the page by comparing ID's
+						for (var x = 0; x < webparts.get_count() && !webPartDef; x++) {
+							var webPartDef = webparts.get_item(x);
+							//GetWebPartProperties(webPartDef)
+							//.then(function(webpart){
+								
+								UpdateQueryOnWebPart(webPartDef,webPartDef.get_webPart(), webPartDef.get_webPart().get_properties())
+								.then(function(message){
+									$("#btnUpdate").css("background","green");
+									$("#trash").html("<span>Bitte Refresh</span>");
+								}).fail(function(message){
+									alert(message);
+								}); 
+						  //});
+						} 
+						
+					});
+					
+				});
+				
+				
+            });
+		
+        }); 
+    });
+	});
+_#-->
+	<div id="DropZone" style="display:none;position:absolute;top:600px;left:0;width:200px;border:1px solid black;;margin-top:-300px;" >
+	
+		<table>
+			<tr>
+				<td>
+					<h2 class="news-header">Topnews</h2>
+				</td>
+				<td>
+					<div id="ButtonPanel">
+						<span id="btnUpdate" style="cursor:pointer;border:1px solid black;margin:10px;">Update Query</span>
+					</div>
+				</td>
+			</tr>
+		</table>
+    	<div class="news-content">
+    		<ol>
+    			<li class="placeholder">News hier ablegen!</li>
+    		</ol>
+    	</div>
+    	<div id="trash"><p>Zum enfernen hier ablegen!</p></div>
+		
+	</div>
+    <ul class="cbs-List">
+
+            _#= ctx.RenderGroups(ctx) =#_
+        </ul>
+<!--#_
+if (ctx.ClientControl.get_shouldShowNoResultMessage())
+{
+_#-->
+        <div class="_#= noResultsClassName =#_">_#= $noResults =#_</div>
+<!--#_
+}
+_#-->
+
+    </div>
+</body>
+</html>
