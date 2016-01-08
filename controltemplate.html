@@ -133,7 +133,7 @@ THE SOFTWARE.
 						var rankrule = new Object();  
 						rankrule.boost = 10-count;
 						rankrule.matchType = 2;  // Contains Equals and so on
-						rankrule.matchValue = $(this).text().split(" ")[0]; // For some strange Reason you'll just have to pick first word? not sure why
+						rankrule.matchValue = $(this).text().trim().split(" ")[0]; // For some strange Reason you'll just have to pick first word? not sure why
 						count++;
 						rules.push(rankrule);
 					});
@@ -166,7 +166,7 @@ THE SOFTWARE.
 						//webpart.saveWebPartChanges();
 						clientContext.load(webpartDefinition);
 						//client.Context.load(webpart);
-						clientContext.executeQueryAsync(function()	{ d.resolve("Done")}, function(err){d.reject("Strange things can happen - save Changes")});
+						clientContext.executeQueryAsync(function()	{ d.resolve("Done")}, function(err){d.reject("Strange things can happen - save Changes - Have you checked out?")});
 					}
 					return d.promise();
 				}
